@@ -17,3 +17,5 @@ Fast decimal string parser to float primitive data type at the expense of being 
 |FloatParserBenchmark.jdk|      12345678.2E-22|  avgt|   30|  232.579| ± 22.520|  us/op|
 |FloatParserBenchmark.jdk|     70385310000E-36|  avgt|   30|  351.372| ± 39.676|  us/op|
 |FloatParserBenchmark.jdk|         +0x12.ABp-1|  avgt|   30|  589.403| ± 32.466|  us/op|
+
+#### Note: There is much more comprehensive and more performant implementation of the same task in project [FastDoubleParser](https://github.com/wrandelshofer/FastDoubleParser).
