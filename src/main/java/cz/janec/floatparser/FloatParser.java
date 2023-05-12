@@ -37,6 +37,7 @@ public class FloatParser {
      * @return numeric representation of float
      */
     // TODO reduce cyclomatic complexity
+    // TODO change exception messages to be the same as JDK implementation
     public static float parseFloat(String value) {
         value = value.trim(); // to behave exactly like JDK implementation
         if (value.isEmpty()) {
@@ -66,11 +67,17 @@ public class FloatParser {
             if (value.equals("+Infinity")) {
                 return Float.POSITIVE_INFINITY;
             }
+            if (value.equals("+NaN")) {
+                return Float.NaN;
+            }
         } else if (c == '-') {
             negative = true;
             pos++;
             if (value.equals("-Infinity")) {
                 return Float.NEGATIVE_INFINITY;
+            }
+            if (value.equals("-NaN")) {
+                return Float.NaN;
             }
         } else if (c == 'N') {
             if (value.equals("NaN")) {
@@ -86,8 +93,10 @@ public class FloatParser {
             }
         }
 
-        if (value.length() >= MIN_HEXADECIMAL_FLOAT_LENGTH && value.charAt(pos) == '0' && (value.charAt(pos + 1) == 'x' || value.charAt(pos + 1) == 'X')) {
-            return Float.parseFloat(value);// fall to original implementation
+        if (value.length() >= MIN_HEXADECIMAL_FLOAT_LENGTH
+                && value.charAt(pos) == '0'
+                && ((value.charAt(pos + 1) | 0x20) == 'x')) { // ~ "xX"
+            return Float.parseFloat(value);// TODO for hex input use original implementation
         }
 
         // number digits including fractional part - digits are accumulated to integer, digits after ninth one are ignored
@@ -96,8 +105,10 @@ public class FloatParser {
         int integerExp = 0;
         boolean leadingZeroesAfterDecimalPoint = true;
         while (pos < value.length()) {
+            // TODO use tricky way to process more characters at once
             char c2 = value.charAt(pos);
-            if (c2 >= '0' && c2 <= '9') {
+            char c3 = (char) (c2 - '0');
+            if (c3 <= 9) {
                 someDigits = true;
                 // TODO find out trailing zeroes and change exponent instead of accumulated integer value
                 if (c2 == '0') {
@@ -115,7 +126,7 @@ public class FloatParser {
                     }
                 }
                 if (digits < 9) {
-                    result = result * 10 + c2 - '0';
+                    result = result * 10 + c3;
                 } else {
                     integerExp++;
                 }
@@ -126,11 +137,11 @@ public class FloatParser {
                 }
                 dotSeen = true;
                 dotPos = digits;
-            } else if (c2 == 'e' || c2 == 'E') {
+            } else if ((c2 | 0x20) == 'e') { // ~ "eE"
                 expSeen = true;
                 pos++;
                 break;
-            } else if (c2 == 'f' || c2 == 'd' || c2 == 'F' || c2 == 'D') {
+            } else if ((c2 | 0x22) == 'f') { // ~ "fdFD"
                 if (pos + 1 != value.length()) {
                     throw new NumberFormatException("Invalid character found: " + c2);
                 }
@@ -160,9 +171,10 @@ public class FloatParser {
             }
             while (pos < value.length()) {
                 char c2 = value.charAt(pos);
-                if (c2 >= '0' && c2 <= '9') {
+                char c3 = (char)(c2 - '0');
+                if (c3 <= 9) {
                     if (expDigits < 9) {
-                        exp = exp * 10 + c2 - '0';
+                        exp = exp * 10 + c3;
                     } else {
                         if (result == 0 || negativeExp) {
                             return negative ? -0.0f : 0.0f; // to behave exactly like JDK implementation
@@ -171,7 +183,7 @@ public class FloatParser {
                         }
                     }
                     expDigits++;
-                } else if (c2 == 'f' || c2 == 'd' || c2 == 'F' || c2 == 'D') {
+                } else if ((c2 | 0x22) == 'f') { // ~ "fdFD"
                     if (pos + 1 != value.length()) {
                         throw new NumberFormatException("Invalid character found: " + c2);
                     }
@@ -188,10 +200,10 @@ public class FloatParser {
             exp -= (decimalExp + digits - dotPos);
         }
         // boundary values
-        if (exp > POWERS_COUNT) {
+        if (exp < -POWERS_COUNT || result == 0) {
+            return negative ? -0.0f : 0.0f;
+        } else if (exp > POWERS_COUNT) {
             return negative ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
-        } else if (exp < -POWERS_COUNT) {
-            return 0.0f;
         }
 
         // apply exponent & sign
