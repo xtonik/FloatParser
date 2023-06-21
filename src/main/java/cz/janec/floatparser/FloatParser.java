@@ -173,7 +173,7 @@ public class FloatParser {
                 char c2 = value.charAt(pos);
                 char c3 = (char)(c2 - '0');
                 if (c3 <= 9) {
-                    if (expDigits < 9) {
+                    if (expDigits < 19) {
                         exp = exp * 10 + c3;
                     } else {
                         if (result == 0 || negativeExp) {
