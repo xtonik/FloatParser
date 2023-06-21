@@ -5,14 +5,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.Random;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 // TODO parametrize parsers
 public class FloatParserTest {
 
     @ParameterizedTest(name = "{index}.  {0}")
-    //@MethodSource("provideStringsForIsBlank")
-    //@EnabledIf("comparsion")
     @ValueSource(strings = {
             "Infinity",
             "0x1p1", "0x1.2p3", "0x1.2P3", "0xAA.BCDp-3", "0xAA.BC0DP+3", // C99 floating-point hexadecimal
@@ -49,6 +49,8 @@ public class FloatParserTest {
             "70385310001E-36", "7038531000001E-38", "7038531000000001E-41",
             "70385311E-33", "703853111E-34", "70.35531E-30", "703.5531E-30",
             "0.70385307E-25", "7.0385307E-26", "7.0385308E-26", "7.0385309E-26", "7.0385311E-26", "7.0385312E-26", "7.0385313E-26",
+
+            "0.12345678912345677", "0.1234567891234567768576901869437278946862", "0.1234567891234567768576901869437278946862"
     })
     public void valid(String s) {
         assertAll(
@@ -64,6 +66,7 @@ public class FloatParserTest {
             "70385310E-33", "703853100E-34", "7038531000E-35", "70385310000E-36", "703853100000000E-40",
             "70385310000000001E-42",
             // TODO add another rounding error cases
+            "1.9146878E-6", "1241481705", "1.5714405E26","906001943","1.066626E29"
     })
     public void validRoundError(String s) {
         assertAll(
@@ -157,5 +160,17 @@ public class FloatParserTest {
                 () -> assertEquals(1, Float.parseFloat(s)),
                 () -> assertEquals(1, FloatParser.parseFloat(s))
         );
+    }
+
+    @Test
+    public void randomDataAbovePrecision() {
+        Random r = new Random();
+        for (int i = 0; i < 100_000; i++) {
+            String integral = Long.toString(r.nextLong() % 200);
+            String fractional = Long.toString(Math.abs(r.nextLong()));
+            String exponent = Long.toString(r.nextLong() % 254 - Float.MIN_EXPONENT);
+            String s = integral + "." + fractional + "E" + exponent;
+            assertEquals(Float.parseFloat(s), FloatParser.parseFloat(s));
+        }
     }
 }
